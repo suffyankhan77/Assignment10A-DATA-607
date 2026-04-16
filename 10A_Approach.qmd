@@ -1,0 +1,100 @@
+---
+title: "Assignment 10A – Approach"
+author: "Muhammad Suffyan Khan"
+format: html
+editor: visual
+date: "04/15/2026"
+---
+
+## Objective
+
+The objective of this assignment is to reproduce and extend the sentiment analysis example presented in Chapter 2 of *Text Mining with R* using tidy text mining techniques in R.
+
+In the first part, I will reproduce the original sentiment analysis workflow applied to Jane Austen’s novels, following the methodology described in the chapter. In the second part, I will extend this analysis by applying the same sentiment analysis techniques to a different corpus of text, specifically movie reviews, and by incorporating an additional sentiment lexicon.
+
+The goal is to demonstrate how sentiment analysis can be performed using tidy data principles and to evaluate how results vary depending on both the text corpus and the sentiment lexicon used.
+
+------------------------------------------------------------------------
+
+## Source Material
+
+The base example for this assignment is taken from Chapter 2, **“Sentiment analysis with tidy data,”** from *Text Mining with R* by Julia Silge and David Robinson.
+
+The chapter demonstrates how to: - tokenize text into tidy format, - join sentiment lexicons with text data, - and analyze sentiment patterns using the **Bing**, **NRC**, and **AFINN** lexicons.
+
+This workflow will be reproduced in the first part of the assignment. A proper citation to the book and the original example source will be included in the final report.
+
+------------------------------------------------------------------------
+
+## Selected Dataset for Extension
+
+
+For the extension portion, I will use the **IMDB Movie Reviews dataset**, which contains approximately 50,000 reviews labeled as either positive or negative.
+
+The dataset includes: - a **review** column containing the text data - a **sentiment** column indicating whether the review is positive or negative
+
+Dataset Link: https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
+
+For reproducibility, a local copy of the dataset will be uploaded to my GitHub repository, and the analysis will be performed using the raw GitHub link so that the data can be directly accessed within the Quarto document.
+
+This dataset is well-suited for sentiment analysis because it contains modern, opinion-driven text and provides labeled sentiment, which allows for comparison between lexicon-based sentiment results and actual sentiment classifications.
+
+------------------------------------------------------------------------
+
+## Planned Workflow
+
+The workflow for this assignment will be:
+
+### Part 1 — Reproducing the Chapter 2 Example
+
+1.  Load required libraries including `tidyverse`, `tidytext`, and `janeaustenr`
+2.  Import Jane Austen’s novels using the `janeaustenr` package
+3.  Convert the text into tidy format using `unnest_tokens()`
+4. Apply sentiment analysis using the **Bing, NRC, and AFINN** lexicons through inner joins between the tidy text data and the sentiment lexicons, following the tidy data principles outlined in Chapter 2
+5.  Recreate key summaries and visualizations from the original example
+6.  Include proper citation to *Text Mining with R* and the original source
+
+### Part 2 — Extending the Analysis
+
+7.  Load the IMDB movie reviews dataset
+8.  Clean and tokenize the review text into tidy format (one word per row)
+9.  Apply sentiment analysis using the same lexicons from the original example (Bing, NRC, AFINN)
+10. Incorporate an additional sentiment lexicon, specifically the **syuzhet** lexicon
+11. Compute sentiment scores and summaries for the movie reviews
+12. Compare results across different lexicons
+13. Compare results between the original Jane Austen analysis and the movie review analysis
+
+------------------------------------------------------------------------
+
+## Planned Data Preparation
+
+For the reproduced example, data preparation will follow the structure outlined in Chapter 2, including grouping text by book and tracking text position for sentiment analysis.
+
+For the movie review dataset, the review text will be cleaned and tokenized into individual words using tidy text principles. Only relevant columns (review and sentiment) will be used. Missing values, if any, will be handled appropriately.
+
+Because sentiment lexicons rely on matching words, some words in the reviews may not appear in all lexicons. This difference in coverage is expected and will be considered when interpreting results.
+
+------------------------------------------------------------------------
+
+## Expected Comparison
+
+The original Jane Austen example is expected to show gradual sentiment changes across the narrative structure of novels, reflecting shifts in story development.
+
+In contrast, the movie review dataset is expected to show stronger and more direct sentiment because reviews explicitly express opinions. This may result in clearer positive and negative patterns.
+
+Differences are expected across sentiment lexicons due to variations in vocabulary coverage and scoring methods. Since each lexicon is constructed differently, they may assign different sentiment values to the same words. This will lead to variation in sentiment scores and interpretation.
+
+Additionally, because the IMDB dataset includes labeled sentiment, it will be possible to compare lexicon-based sentiment results with actual sentiment classifications, providing further insight into the effectiveness of each lexicon.
+
+------------------------------------------------------------------------
+
+## Expected Outcome
+
+The final outcome will be a reproducible Quarto report that:
+
+-   successfully reproduces the Chapter 2 sentiment analysis example,
+-   extends the analysis using a different corpus (movie reviews),
+-   incorporates an additional sentiment lexicon,
+-   and provides a clear comparison of results.
+
+The report will demonstrate that sentiment analysis results are influenced by both the type of text being analyzed and the choice of sentiment lexicon, fulfilling all requirements of the assignment.
