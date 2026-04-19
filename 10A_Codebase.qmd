@@ -1,0 +1,535 @@
+---
+title: "Assignment 10A – Codebase"
+author: "Muhammad Suffyan Khan"
+format: html
+editor: visual
+date: "04/19/2026"
+---
+
+## Objective
+
+The objective of this assignment is to reproduce and extend the sentiment analysis example presented in Chapter 2 of *Text Mining with R* using tidy text mining techniques in R.
+
+In the first part, I will reproduce the original sentiment analysis workflow applied to Jane Austen’s novels, following the methodology described in the chapter. In the second part, I will extend this analysis by applying the same sentiment analysis techniques to a different corpus of text, specifically movie reviews, and by incorporating an additional sentiment lexicon.
+
+The goal is to demonstrate how sentiment analysis can be performed using tidy data principles and to evaluate how results vary depending on both the text corpus and the sentiment lexicon used.
+
+------------------------------------------------------------------------
+
+## Source Material
+
+The base example for this assignment is taken from Chapter 2, **“Sentiment analysis with tidy data,”** from *Text Mining with R* by Julia Silge and David Robinson.
+
+The chapter demonstrates how to: - tokenize text into tidy format, - join sentiment lexicons with text data, - and analyze sentiment patterns using the **Bing**, **NRC**, and **AFINN** lexicons.
+
+This workflow will be reproduced in the first part of the assignment. A proper citation to the book and the original example source will be included in the final report.
+
+------------------------------------------------------------------------
+
+## Selected Dataset for Extension
+
+For the extension portion, I will use the **IMDB Movie Reviews dataset**, which contains approximately 50,000 reviews labeled as either positive or negative.
+
+The dataset includes: - a **review** column containing the text data - a **sentiment** column indicating whether the review is positive or negative
+
+Dataset Link: https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
+
+For reproducibility, a local copy of the dataset will be uploaded to my GitHub repository, and the analysis will be performed using the raw GitHub link so that the data can be directly accessed within the Quarto document.
+
+This dataset is well-suited for sentiment analysis because it contains modern, opinion-driven text and provides labeled sentiment, which allows for comparison between lexicon-based sentiment results and actual sentiment classifications.
+
+------------------------------------------------------------------------
+
+## Planned Workflow
+
+The workflow for this assignment will be:
+
+### Part 1 — Reproducing the Chapter 2 Example
+
+1.  Load required libraries including `tidyverse`, `tidytext`, and `janeaustenr`
+2.  Import Jane Austen’s novels using the `janeaustenr` package
+3.  Convert the text into tidy format using `unnest_tokens()`
+4.  Apply sentiment analysis using the **Bing, NRC, and AFINN** lexicons through inner joins between the tidy text data and the sentiment lexicons, following the tidy data principles outlined in Chapter 2
+5.  Recreate key summaries and visualizations from the original example
+6.  Include proper citation to *Text Mining with R* and the original source
+
+### Part 2 — Extending the Analysis
+
+7.  Load the IMDB movie reviews dataset
+8.  Clean and tokenize the review text into tidy format (one word per row)
+9.  Apply sentiment analysis using the same lexicons from the original example (Bing, NRC, AFINN)
+10. Incorporate an additional sentiment lexicon, specifically the **syuzhet** lexicon
+11. Compute sentiment scores and summaries for the movie reviews
+12. Compare results across different lexicons
+13. Compare results between the original Jane Austen analysis and the movie review analysis
+
+------------------------------------------------------------------------
+
+## Planned Data Preparation
+
+For the reproduced example, data preparation will follow the structure outlined in Chapter 2, including grouping text by book and tracking text position for sentiment analysis.
+
+For the movie review dataset, the review text will be cleaned and tokenized into individual words using tidy text principles. Only relevant columns (review and sentiment) will be used. Missing values, if any, will be handled appropriately.
+
+Because sentiment lexicons rely on matching words, some words in the reviews may not appear in all lexicons. This difference in coverage is expected and will be considered when interpreting results.
+
+------------------------------------------------------------------------
+
+## Expected Comparison
+
+The original Jane Austen example is expected to show gradual sentiment changes across the narrative structure of novels, reflecting shifts in story development.
+
+In contrast, the movie review dataset is expected to show stronger and more direct sentiment because reviews explicitly express opinions. This may result in clearer positive and negative patterns.
+
+Differences are expected across sentiment lexicons due to variations in vocabulary coverage and scoring methods. Since each lexicon is constructed differently, they may assign different sentiment values to the same words. This will lead to variation in sentiment scores and interpretation.
+
+Additionally, because the IMDB dataset includes labeled sentiment, it will be possible to compare lexicon-based sentiment results with actual sentiment classifications, providing further insight into the effectiveness of each lexicon.
+
+------------------------------------------------------------------------
+
+## Expected Outcome
+
+The final outcome will be a reproducible Quarto report that:
+
+-   successfully reproduces the Chapter 2 sentiment analysis example,
+-   extends the analysis using a different corpus (movie reviews),
+-   incorporates an additional sentiment lexicon,
+-   and provides a clear comparison of results.
+
+The report will demonstrate that sentiment analysis results are influenced by both the type of text being analyzed and the choice of sentiment lexicon, fulfilling all requirements of the assignment.
+
+
+# Note: A representative sample of the IMDB dataset is used due to GitHub file size limitations
+
+# Codebase
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+## Libraries
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidytext)
+library(janeaustenr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+library(syuzhet)
+```
+
+## Part 1 — Reproducing the Chapter 2 Example
+
+### Preparing Jane Austen Text Data
+
+The original example in Chapter 2 uses Jane Austen’s novels from the `janeaustenr` package. The text is converted into tidy format so that each row contains one word. This makes it possible to perform sentiment analysis through inner joins with sentiment lexicons.
+
+```{r}
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(
+      text,
+      regex("^chapter [\\divxlc]", ignore_case = TRUE)
+    ))
+  ) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+tidy_books
+```
+
+### Sentiment Lexicons in `tidytext`
+
+Chapter 2 introduces three main lexicons:
+
+-   **AFINN**: assigns numeric sentiment values
+-   **Bing**: classifies words as positive or negative
+-   **NRC**: classifies words into emotions and positive/negative categories
+
+```{r}
+get_sentiments("afinn") %>% head()
+
+get_sentiments("bing") %>% head()
+
+get_sentiments("nrc") %>% head()
+```
+
+### Joy Words in *Emma* Using the NRC Lexicon
+
+This reproduces one of the early examples from the chapter by identifying the most common joy words in *Emma*.
+
+```{r}
+nrc_joy <- get_sentiments("nrc") %>%
+  filter(sentiment == "joy")
+
+emma_joy_words <- tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(
+    nrc_joy,
+    by = "word",
+    relationship = "many-to-many"
+  ) %>%
+  count(word, sort = TRUE)
+
+emma_joy_words %>%
+  slice_head(n = 15)
+```
+
+### Sentiment Through Jane Austen’s Novels
+
+Next, sentiment is measured across sections of each novel using the Bing lexicon. Following Chapter 2, the novels are divided into chunks based on line number, and net sentiment is calculated as positive minus negative.
+
+```{r}
+jane_austen_sentiment <- tidy_books %>%
+  inner_join(get_sentiments("bing"), by = "word", relationship = "many-to-many") %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+jane_austen_sentiment %>%
+  ggplot(aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x") +
+  labs(
+    title = "Sentiment Through Jane Austen's Novels",
+    x = "Narrative Index",
+    y = "Net Sentiment"
+  )
+```
+
+### Comparing the Three Lexicons on *Pride and Prejudice*
+
+This section reproduces the chapter’s comparison of AFINN, Bing, and NRC on *Pride and Prejudice*.
+
+```{r}
+pride_prejudice <- tidy_books %>%
+  filter(book == "Pride & Prejudice")
+
+afinn_pp <- pride_prejudice %>%
+  inner_join(
+    get_sentiments("afinn"),
+    by = "word",
+    relationship = "many-to-many"
+  ) %>%
+  group_by(index = linenumber %/% 80) %>%
+  summarise(sentiment = sum(value), .groups = "drop") %>%
+  mutate(method = "AFINN")
+
+bing_and_nrc_pp <- bind_rows(
+  pride_prejudice %>%
+    inner_join(
+      get_sentiments("bing"),
+      by = "word",
+      relationship = "many-to-many"
+    ) %>%
+    mutate(method = "Bing et al."),
+  
+  pride_prejudice %>%
+    inner_join(
+      get_sentiments("nrc") %>%
+        filter(sentiment %in% c("positive", "negative")),
+      by = "word",
+      relationship = "many-to-many"
+    ) %>%
+    mutate(method = "NRC")
+) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(
+    names_from = sentiment,
+    values_from = n,
+    values_fill = 0
+  ) %>%
+  mutate(sentiment = positive - negative)
+
+bind_rows(afinn_pp, bing_and_nrc_pp) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y") +
+  labs(
+    title = "Comparing Three Sentiment Lexicons on Pride and Prejudice",
+    x = "Narrative Index",
+    y = "Net Sentiment"
+  )
+
+```
+
+### Most Common Positive and Negative Words in Jane Austen
+
+This section reproduces the chapter’s idea of identifying which words contribute most to positive and negative sentiment.
+
+```{r}
+bing_word_counts <- tidy_books %>%
+  inner_join(
+    get_sentiments("bing"),
+    by = "word",
+    relationship = "many-to-many"
+  ) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(
+    title = "Words Contributing to Positive and Negative Sentiment in Jane Austen",
+    x = "Contribution to Sentiment",
+    y = NULL
+  )
+```
+
+## Part 2 — Extending the Analysis with IMDB Movie Reviews
+
+### Loading the IMDB Review Dataset
+
+For the extension, I use a representative sample of the IMDB Movie Reviews dataset. The full dataset was too large for direct GitHub upload, so a sampled version was uploaded and accessed through a raw GitHub link for reproducible analysis. Reviews with missing sentiment labels were removed so that the comparison focuses only on labeled positive and negative reviews.
+
+```{r}
+imdb_url <- "https://raw.githubusercontent.com/suffyankhan77/Assignment10A-DATA-607/refs/heads/main/imdb_reviews_sample.csv"
+
+reviews <- read_csv(imdb_url, show_col_types = FALSE) %>%
+  filter(!is.na(sentiment)) %>%
+  mutate(review_id = row_number())
+
+glimpse(reviews)
+```
+
+### Inspecting the Review Labels
+
+The dataset contains review text and labeled sentiment, which allows comparison between lexicon-based sentiment analysis and the provided review classifications.
+
+```{r}
+reviews %>%
+  count(sentiment)
+```
+
+### Converting Reviews to Tidy Text
+
+As in the base example, the text is tokenized into one word per row. This allows lexicons from `tidytext` to be joined directly to the review words.
+
+```{r}
+tidy_reviews <- reviews %>%
+  select(review_id, sentiment, review) %>%
+  unnest_tokens(word, review)
+
+tidy_reviews
+```
+
+### Top Positive and Negative Words in Movie Reviews Using Bing
+
+This section applies the Bing lexicon to the movie review corpus to identify the most common positive and negative words.
+
+```{r}
+bing_reviews <- tidy_reviews %>%
+  inner_join(
+    get_sentiments("bing"),
+    by = "word",
+    relationship = "many-to-many"
+  )
+
+bing_reviews %>%
+  count(word, sentiment.y, sort = TRUE) %>%
+  rename(lexicon_sentiment = sentiment.y) %>%
+  group_by(lexicon_sentiment) %>%
+  slice_max(n, n = 10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = lexicon_sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~lexicon_sentiment, scales = "free_y") +
+  labs(
+    title = "Top Positive and Negative Words in IMDB Reviews (Bing Lexicon)",
+    x = "Word Count",
+    y = NULL
+  )
+```
+
+### Document-Level Sentiment with AFINN
+
+The AFINN lexicon assigns numeric sentiment values. Here, a sentiment score is calculated for each review by summing the values of matched words.
+
+```{r}
+afinn_review_scores <- tidy_reviews %>%
+  inner_join(
+    get_sentiments("afinn"),
+    by = "word",
+    relationship = "many-to-many"
+  ) %>%
+  group_by(review_id) %>%
+  summarise(afinn_score = sum(value), .groups = "drop") %>%
+  left_join(reviews %>% select(review_id, sentiment), by = "review_id")
+
+afinn_review_scores %>%
+  group_by(sentiment) %>%
+  summarise(
+    mean_afinn = mean(afinn_score, na.rm = TRUE),
+    median_afinn = median(afinn_score, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+ggplot(afinn_review_scores, aes(x = sentiment, y = afinn_score, fill = sentiment)) +
+  geom_boxplot(show.legend = FALSE) +
+  labs(
+    title = "AFINN Sentiment Scores by Labeled Review Sentiment",
+    x = "Labeled Sentiment",
+    y = "AFINN Score"
+  )
+```
+
+### Emotion Categories with NRC
+
+Unlike Bing and AFINN, the NRC lexicon includes emotion categories such as joy, anger, fear, and trust. This makes it useful for exploring the emotional profile of the reviews.
+
+```{r}
+nrc_emotions <- tidy_reviews %>%
+  inner_join(
+    get_sentiments("nrc"),
+    by = "word",
+    relationship = "many-to-many"
+  ) %>%
+  filter(!sentiment.y %in% c("positive", "negative")) %>%
+  rename(
+    review_label = sentiment.x,
+    emotion = sentiment.y
+  )
+
+nrc_emotions %>%
+  count(review_label, emotion, sort = TRUE) %>%
+  ggplot(aes(x = reorder(emotion, n), y = n, fill = review_label)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "NRC Emotion Categories in IMDB Reviews",
+    x = "Emotion",
+    y = "Count"
+  )
+```
+
+## Part 3 — Additional Sentiment Lexicon: `syuzhet`
+
+### Why Add `syuzhet`?
+
+To extend the original example beyond the lexicons discussed in Chapter 2, this report adds sentiment scoring from the `syuzhet` package. This satisfies the assignment requirement to include an additional lexicon or sentiment method beyond the base example.
+
+### Calculating `syuzhet` Sentiment Scores
+
+The `syuzhet` package can calculate sentiment directly from full text. Here, a sentiment score is calculated for each review.
+
+```{r}
+reviews_syuzhet <- reviews %>%
+  mutate(syuzhet_score = get_sentiment(review, method = "syuzhet"))
+
+reviews_syuzhet %>%
+  group_by(sentiment) %>%
+  summarise(
+    mean_syuzhet = mean(syuzhet_score, na.rm = TRUE),
+    median_syuzhet = median(syuzhet_score, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+ggplot(reviews_syuzhet, aes(x = sentiment, y = syuzhet_score, fill = sentiment)) +
+  geom_boxplot(show.legend = FALSE) +
+  labs(
+    title = "Syuzhet Sentiment Scores by Labeled Review Sentiment",
+    x = "Labeled Sentiment",
+    y = "Syuzhet Score"
+  )
+```
+
+## Part 4 — Comparing Lexicon Results on Movie Reviews
+
+### Combining AFINN and `syuzhet` Review Scores
+
+To compare methods more directly, the AFINN and `syuzhet` review-level scores are combined below.
+
+```{r}
+comparison_scores <- afinn_review_scores %>%
+  left_join(
+    reviews_syuzhet %>% select(review_id, syuzhet_score),
+    by = "review_id"
+  )
+
+comparison_scores %>%
+  pivot_longer(
+    cols = c(afinn_score, syuzhet_score),
+    names_to = "method",
+    values_to = "score"
+  ) %>%
+  ggplot(aes(x = sentiment, y = score, fill = sentiment)) +
+  geom_boxplot(show.legend = FALSE) +
+  facet_wrap(~method, scales = "free_y") +
+  labs(
+    title = "Comparison of AFINN and Syuzhet Scores by Review Label",
+    x = "Labeled Sentiment",
+    y = "Sentiment Score"
+  )
+```
+
+### Agreement with Review Labels
+
+A simple way to assess whether the lexicon-based scores behave as expected is to compare score direction with the provided positive and negative review labels.
+
+```{r}
+agreement_table <- comparison_scores %>%
+  mutate(
+    afinn_prediction = case_when(
+      afinn_score > 0 ~ "positive",
+      afinn_score < 0 ~ "negative",
+      TRUE ~ "neutral"
+    ),
+    syuzhet_prediction = case_when(
+      syuzhet_score > 0 ~ "positive",
+      syuzhet_score < 0 ~ "negative",
+      TRUE ~ "neutral"
+    )
+  ) %>%
+  summarise(
+    afinn_agreement = mean(afinn_prediction == sentiment, na.rm = TRUE),
+    syuzhet_agreement = mean(syuzhet_prediction == sentiment, na.rm = TRUE)
+  )
+
+agreement_table
+```
+
+## Part 5 — Discussion
+
+### How the Extension Differs from the Original Example
+
+The reproduced Jane Austen example shows sentiment changing gradually across the narrative structure of novels. This is appropriate for literary text, where sentiment rises and falls over time as the plot develops.
+
+The IMDB movie review corpus behaves differently because the text consists of direct opinions rather than long narrative arcs. Instead of measuring sentiment through a story, the extension measures sentiment at the review level. As a result, the review corpus is expected to show stronger and more explicit positive and negative sentiment.
+
+### How the Lexicons Differ
+
+The lexicons and sentiment methods do not produce identical results. Bing provides a binary positive/negative classification, AFINN provides numeric intensity scores, NRC adds emotional categories, and `syuzhet` produces an additional document-level sentiment score. Because each method is built differently and has different vocabulary coverage, the resulting sentiment scores and interpretations vary across methods.
+
+### Overall Interpretation
+
+The results show that sentiment analysis depends on both the corpus and the lexicon used. The Jane Austen example is useful for tracking narrative sentiment, while the IMDB review corpus is better suited for direct review-level sentiment analysis. The extension also shows that using an additional sentiment method such as `syuzhet` can produce different but still informative results.
+
+In the IMDB review corpus, both AFINN and syuzhet produced higher average sentiment scores for reviews labeled as positive than for reviews labeled as negative, and their agreement rates with the provided labels were broadly similar. This suggests that both methods were able to capture overall review polarity reasonably well, even though they rely on different sentiment scoring approaches.
+
+## Conclusion
+
+This report successfully reproduced the Chapter 2 sentiment analysis example from *Text Mining with R* and extended it in two ways. First, a different corpus, the IMDB movie reviews dataset, was analyzed. Second, an additional sentiment method from the `syuzhet` package was incorporated.
+
+Overall, the analysis demonstrates that tidy sentiment analysis can be adapted to different text corpora, but the interpretation of the results depends on both the nature of the text and the sentiment lexicon or method used.
+
+## References
+
+Silge, J., & Robinson, D. (2024). *Text Mining with R: A Tidy Approach*. Chapter 2: “Sentiment analysis with tidy data.” Retrieved from <https://www.tidytextmining.com/sentiment>
+
+IMDB Movie Reviews Dataset. Retrieved from <https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews>
+
+Rinker, T. W. et al. `syuzhet` package documentation. Retrieved from <https://cran.r-project.org/package=syuzhet>
