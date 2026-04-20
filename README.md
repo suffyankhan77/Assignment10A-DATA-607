@@ -102,7 +102,7 @@ To extend beyond the original example:
 * **AFINN agreement:** ~0.681
 * **syuzhet agreement:** ~0.687
 
-👉 Both methods effectively captured sentiment polarity.
+ Both methods effectively captured sentiment polarity.
 
 ---
 
