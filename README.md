@@ -134,10 +134,10 @@ The analysis is fully reproducible:
 
 ## Links
 
-* 📁 **GitHub Repository:**
+*  **GitHub Repository:**
   [https://github.com/suffyankhan77/Assignment10A-DATA-607](https://github.com/suffyankhan77/Assignment10A-DATA-607)
 
-* 📊 **RPubs Report:**
+*  **RPubs Report:**
   [https://rpubs.com/suffyankhan77/1423731](https://rpubs.com/suffyankhan77/1423731)
 
 ---
@@ -172,11 +172,4 @@ Full transcript included in:
 
 ---
 
-## Final Status
-
-✔ Reproduced Chapter 2
-✔ Extended with new dataset
-✔ Added additional lexicon
-✔ Compared results across methods
-✔ Fully reproducible
 
